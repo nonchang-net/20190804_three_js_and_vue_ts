@@ -12,16 +12,12 @@ self.__precacheManifest = [
     "url": "/js/chunk-vendors.8fa16674.js"
   },
   {
-    "revision": "7b669fee79c4b70a34da4e1958f3f28e",
+    "revision": "274e8cc12ee6fa863032ea88fd20fc1c",
     "url": "/index.html"
   },
   {
     "revision": "b6216d61c03e6ce0c9aea6ca7808f7ca",
     "url": "/robots.txt"
-  },
-  {
-    "revision": "5d5e54d15b98464d32c483dc70d0ee39",
-    "url": "/gltfs/third-chan-texture.png"
   },
   {
     "revision": "e98de8f1e1716d10ffe0e6c7ce5d25fd",
@@ -30,5 +26,9 @@ self.__precacheManifest = [
   {
     "revision": "a7b679b02ff89b96a174e596ed2c0ff7",
     "url": "/gltfs/third-chan_ver20190729-onemesh.bin"
+  },
+  {
+    "revision": "5d5e54d15b98464d32c483dc70d0ee39",
+    "url": "/gltfs/third-chan-texture.png"
   }
 ];
