@@ -54,6 +54,8 @@ export default class ThreeView extends Vue {
 			canvas: $canvas,
 		});
 
+		this.renderer.gammaOutput = true;
+
 		this.camera.position.set(0, 0, 2);
 		this.light.position.set(0, 0, 10);
 		this.scene.add(this.light);
