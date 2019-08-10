@@ -18,34 +18,36 @@ Copyright(C) nonchang.net All rights reserved.
 
 
 
-export default class SimpleEvent<T>{
+export default class SimpleEvent<T> {
 
-	private _handlers: any //サブスクライバのメソッドリスト。 TODO: できればanyやめたいけどstringをキーに取るメソッドのhashmap表現方法が思いつかず保留中。多分typescriptの理解不足がある気がする。
+	private handlers: any // サブスクライバのメソッドリスト
+	// TODO: できればanyやめたいけどstringをキーに取るメソッドの
+	// hashmap表現方法が思いつかず保留中。多分typescriptの理解不足がある気がする。
 
-	subscribe(subscriberName: string, func: (arg: T) => any) {
-		if (!this._handlers) {
-			this._handlers = {}
+	public subscribe(subscriberName: string, func: (arg: T) => any) {
+		if (!this.handlers) {
+			this.handlers = {};
 		}
-		if (!this._handlers[subscriberName]) {
-			this.init(subscriberName)
+		if (!this.handlers[subscriberName]) {
+			this.init(subscriberName);
 		}
-		this._handlers[subscriberName].push(func);
+		this.handlers[subscriberName].push(func);
 	}
 
-	unsubscribe(subscriberName: string) {
-		this.init(subscriberName)
+	public unsubscribe(subscriberName: string) {
+		this.init(subscriberName);
+	}
+
+	public broadcast(arg?: T) {
+		for (const subscriber of this.handlers) {
+			for (const handler of subscriber) {
+				handler.apply(this, arguments);
+			}
+		}
 	}
 
 	private init(subscriberName: string) {
-		this._handlers[subscriberName] = []
-	}
-
-	broadcast(arg?: T) {
-		for (const subscriberName in this._handlers) {
-			for (const handler of this._handlers[subscriberName]) {
-				handler.apply(this, arguments)
-			}
-		}
+		this.handlers[subscriberName] = [];
 	}
 }
 
@@ -66,30 +68,30 @@ TODO: ただのSimpleEventのラッパにすぎないことに注意。
 		this.gameState.subscribe(subscriverName, func)
 	}
 */
-export class ReactiveProperty<T>{
+export class ReactiveProperty<T> {
 
-	private event: SimpleEvent<T>
-	private prop: T
+	private event: SimpleEvent<T>;
+	private prop: T;
 
 	constructor(arg: T) {
-		this.prop = arg
-		this.event = new SimpleEvent<T>()
+		this.prop = arg;
+		this.event = new SimpleEvent<T>();
 	}
 
-	set value(arg: T) {
-		this.prop = arg
-		this.event.broadcast(arg)
+	public set value(arg: T) {
+		this.prop = arg;
+		this.event.broadcast(arg);
 	}
 
-	get value(): T {
-		return this.prop
+	public get value(): T {
+		return this.prop;
 	}
 
-	subscribe(subscriberName: string, func: (arg: T) => any) {
-		this.event.subscribe(subscriberName, func)
+	public subscribe(subscriberName: string, func: (arg: T) => any) {
+		this.event.subscribe(subscriberName, func);
 	}
 
-	unsubscribe(subscriberName: string) {
-		this.event.unsubscribe(subscriberName)
+	public unsubscribe(subscriberName: string) {
+		this.event.unsubscribe(subscriberName);
 	}
 }

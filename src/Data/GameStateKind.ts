@@ -9,4 +9,4 @@ enum GameStateKind {
 	Result,
 }
 
-export default GameStateKind
+export default GameStateKind;

@@ -7,13 +7,13 @@
 
 export default class MasterData {
 
-	lastUpdate: number = -1
+	private lastUpdate: number = -1;
 
 	// monsters: Monsters
 	// characters: Characters
 
-	async asyncSetup(lastUpdate: number) {
-		//TODO: S3からローカルストレージにlastUpdateを保存・読み込み・差分確認
+	public async asyncSetup(lastUpdate: number) {
+		// TODO: S3からローカルストレージにlastUpdateを保存・読み込み・差分確認
 		// - また、マスターデータクラス系の更新処理は共通処理なので継承関係にしていいと思う
 		// if (this.lastUpdate < lastUpdate) {
 		// 	this.monsters = await new Monsters().asyncSetup()
@@ -25,6 +25,6 @@ export default class MasterData {
 	}
 
 	// TODO: ローカルストレージにバージョン保存
-	Save() {
-	}
+	// private Save() {
+	// }
 }
