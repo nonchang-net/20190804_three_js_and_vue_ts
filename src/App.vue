@@ -1,51 +1,81 @@
 <template>
 	<div id="app">
-		<p>ver 20190806 2224 test</p>
-		<div>
-			<label for="speed">speed</label>
-			<input
-				v-model.number="speed"
-				name="speed"
-				id="speed"
-				type="range"
-				min="0.000"
-				max="0.1"
-				step="0.005"
-			/>
-		</div>
-		<ThreeView :speed="speed"></ThreeView>
+		<ThreeView
+			:speed="speed"
+		/>
+		<UI
+			ref="ui1"
+			@onSpeedChanged='onSpeedChanged($event)'
+		/>
+		<Test1
+			ref = "test1"
+			:syncedSpeed.sync = "appSyncedSpeed"
+		/>
 	</div>
 </template>
 
-<script lang="ts">
+<style lang="scss">
 
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import ThreeView from './components/ThreeView.vue';
-
-
-@Component({
-	components: {
-		ThreeView,
-	},
-})
-
-export default class App extends Vue {
-	public speed: number = 0.02;
-
-	public mounted() {
-		// console.log(`App.vue mounted.`);
-	}
+*{
+	margin : 0 ;
+	padding : 0 ;
 }
 
-</script>
-
-<style>
 #app {
 	font-family: "Avenir", Helvetica, Arial, sans-serif;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	text-align: center;
 	color: #2c3e50;
-	margin-top: 60px;
+	position : absolute;
+	width : 100%;
+	height : 100%;
 }
 </style>
+
+<script lang="ts">
+
+import { Component, Ref, Watch, Prop, Vue } from 'vue-property-decorator';
+import ThreeView from './components/ThreeView.vue';
+import UI from './components/UI.vue';
+import Test1 from './components/UI/Test1.vue';
+
+
+@Component({
+	components: {
+		ThreeView,
+		UI,
+		Test1,
+	},
+})
+
+export default class App extends Vue {
+
+	public speed: number = 0.02;
+
+	public appSyncedSpeed: number = 0.05;
+
+	// @Ref() private ui1!: UI;
+	// @Ref() private test1!: Test1;
+
+	// public mounted() {
+	// 	// console.log(`App.vue mounted.`);
+	// }
+
+	private onSpeedChanged(newSpeed: number) {
+		console.log(`App.vue: ui1: onSpeedChanged(${newSpeed})`);
+		this.speed = newSpeed;
+	}
+
+
+	@Watch('appSyncedSpeed')
+	private onSyncedSpeedChanged() {
+		console.log(`App.vue: syncedSpeed: onSyncedSpeedChanged(${this.appSyncedSpeed})`);
+	}
+
+
+
+
+}
+
+</script>
