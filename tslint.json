@@ -17,6 +17,13 @@
     "quotemark": [true, "single"],
     "no-console": [
         false
+    ],
+    "max-classes-per-file": [
+      true,
+      5
+    ],
+    "semicolon": [
+      false
     ]
   }
 }
