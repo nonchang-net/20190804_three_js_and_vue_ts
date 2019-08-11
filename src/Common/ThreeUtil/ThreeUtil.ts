@@ -30,6 +30,15 @@ export default class ThreeUtil {
 
 	private renderer!: THREE.WebGLRenderer;
 
+	// computed
+	private get viewWidth(): number {
+		return this.wrapperElement.clientWidth;
+	}
+	private get viewHeight(): number {
+		return this.wrapperElement.clientHeight;
+	}
+
+	// Three.js
 	private scene = new THREE.Scene();
 	private camera = new THREE.PerspectiveCamera(
 		this.FIELD_OF_VIEW,
@@ -37,6 +46,9 @@ export default class ThreeUtil {
 		0.1,
 		1000,
 	);
+
+	// ライト
+	// TODO: 利用側設定に汎用化
 	private light = new THREE.DirectionalLight(0xffffff);
 
 	// キューブインスタンス
@@ -55,7 +67,7 @@ export default class ThreeUtil {
 
 		this.wrapperElement = wrapperElement;
 		this.canvasElement = canvasElement;
-		
+
 		this.renderer = new THREE.WebGLRenderer({
 			antialias: true,
 			canvas: this.canvasElement,
@@ -134,8 +146,8 @@ export default class ThreeUtil {
 		// this.renderer.setPixelRatio(2); //倍解像度(非retinaで綺麗)
 		// this.renderer.setPixelRatio(window.devicePixelRatio); //retinaなどではくっきり高画質
 
-		// 以上の結果をもとに、以下が最終案。（重いので開発中は保留）
-		// - 非retinaでのPCではアンチエイリアスを期待して倍解像度
+		// 以上の結果をもとに、一旦以下の案。（重いので開発中は保留）
+		// - 非retinaでのPCではアンチエイリアスを期待して倍解像度（？）
 		// - retinaではdevice解像度」を適用
 
 		// if (window.devicePixelRatio <= 1) {
@@ -148,37 +160,40 @@ export default class ThreeUtil {
 	// ======================
 	// カメラ初期化
 	// - TODO: 縦横比率維持設定のロジックを考える
-	// - TODO: position.setは利用側だよなぁ……。
+	// - TODO: position.setは利用側でやるべき処理だよなぁ……。
 	private InititalizeCamera() {
-
-		this.camera = new THREE.PerspectiveCamera(
-			this.FIELD_OF_VIEW * (this.canvasElement.clientHeight / this.canvasElement.clientWidth),
-			this.canvasElement.clientWidth / this.canvasElement.clientHeight,
-			1,
-			10000,
-		)
+		this.camera = new THREE.PerspectiveCamera();
+		this.camera.near = 1;
+		this.camera.far = 10000;
 		this.camera.position.set(0, 0, +1000)
 	}
 
 	// ======================
 	// カメラ更新
-	// - note: ブラウザサイズが変わった時などにレイアウト追従
+	// - note: 初期化時とブラウザサイズが変わった時などにレイアウト追従
 	private UpdateCamera() {
-		// サイズを取得
-		// console.log(`this.uiElement.clientWidth = ${this.uiElement.clientWidth}`)
-		const width = this.wrapperElement.clientWidth;
-		const height = this.wrapperElement.clientHeight;
 
-		this.renderer.setSize(width, height);
+		this.renderer.setSize(this.viewWidth, this.viewHeight);
+		this.camera.aspect = this.viewWidth / this.viewHeight
 
-		// カメラのアスペクト比を正す
-		this.camera.aspect = width / height
-		// this.camera.aspect = width / height * 3.2 // TODO: 横壁を見せたい場合にこんくらいまで広げると見えるという例。調整中。
-
-		// note: 逆アスペクトをfovに乗算することで、画面横幅サイズを維持した画角になる（要検証）
-		this.camera.fov = this.FIELD_OF_VIEW * (height / width) // * 0.8
+		// TODO: カメラ維持方向はコンストラクタ設定で切り替えられるようにする
+		this.UpdateCameraAspectForWidthMatch(); // width match
+		// this.UpdateCameraAspectForHeightMatch(); // height match
 
 		this.camera.updateProjectionMatrix();
+	}
+
+	// ======================
+	// ビュー幅維持のカメラ設定
+	private UpdateCameraAspectForWidthMatch() {
+		// note: 逆アスペクトをfovに乗算することで、画面幅維持した画角にする
+		this.camera.fov = this.FIELD_OF_VIEW * (this.viewHeight / this.viewWidth)
+	}
+
+	// ======================
+	// ビュー高さ維持のカメラ設定
+	private UpdateCameraAspectForHeightMatch() {
+		this.camera.fov = this.FIELD_OF_VIEW
 	}
 
 
