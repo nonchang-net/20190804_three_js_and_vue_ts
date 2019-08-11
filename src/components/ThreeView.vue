@@ -1,12 +1,26 @@
 <template>
-	<canvas id="canvas" width="600" height="400"></canvas>
+	<div class="wrapper" id="wrapper">
+		<canvas id="canvas" />
+	</div>
 </template>
 
 
-<style lang="scss">
-canvas{
+<style lang="scss" scoped>
+
+.wrapper{
+	border : 1px solid blue;
 	position : absolute;
 	width : 100%;
+	height : 100%;
+	left : 0 ;
+	top : 0 ;
+
+}
+
+canvas{
+	border : 1px solid red;
+	position: absolute;
+	width: 100%;
 	height : 100%;
 	left : 0 ;
 	top : 0 ;
@@ -33,75 +47,44 @@ ThreeView.vue
 
 */
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import * as THREE from 'three';
+import ThreeUtil from '../Common/ThreeUtil/ThreeUtil';
 import { WebGLRenderer } from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 
 
 @Component
 export default class ThreeView extends Vue {
 
-	@Prop()
-	public speed: number = 0.02;
+	@Prop() public speed: number = 0.02;
 
-	private renderer: any; // TODO: 型指定するとコンストラクタで初期化しろと怒られる。修正方法は？
-
-	private scene = new THREE.Scene();
-	private camera = new THREE.PerspectiveCamera(75, 600 / 400, 0.1, 1000);
-	private light = new THREE.DirectionalLight(0xffffff);
-
-	private cube: THREE.Mesh | null = null;
+	private threeUtil!: ThreeUtil;
 
 	public mounted() {
 
-		// console.log(`ThreeView.vue mounted ${123}`);
+		const wrapperElement = document.getElementById('wrapper') as HTMLElement;
+		const canvasElement = document.getElementById('canvas') as HTMLCanvasElement;
 
-		const $canvas = document.getElementById('canvas') as HTMLCanvasElement;
-		this.renderer = new THREE.WebGLRenderer({
-			antialias: true,
-			canvas: $canvas,
-		});
+		// three処理ユーティリティ初期化
+		// - TODO: モデル読み込みなどを任せて、awaitで待つようにしたい
+		const three = new ThreeUtil(wrapperElement, canvasElement);
+		this.threeUtil = three;
 
-		this.renderer.gammaOutput = true;
+		// test: cube追加
+		three.AddTestCuveToScene();
 
-		this.camera.position.set(0, 0, 2);
-		this.light.position.set(0, 0, 10);
-		this.scene.add(this.light);
-
-		// キューブ追加
-		const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-		const material = new THREE.MeshNormalMaterial();
-		this.cube = new THREE.Mesh(geometry, material);
-		this.scene.add(this.cube);
-
-		// gltf追加
-		const loader = new GLTFLoader();
-		loader.load(
-			'./gltfs/third-chan_ver20190729-onemesh.gltf',
-			(gltf) => {
-				const object = gltf.scene;
-				this.scene.add(object);
-			},
-			(xhr) => {
-				console.log(`progress: ${Math.floor(xhr.loaded / xhr.total * 100)}%`);
-			},
-			(error) => {
-				console.error(`error : `, error);
-			},
-		);
+		// test: gltf追加
+		three.LoadAndAddGltfTest();
 
 		this.animate();
 	}
 
 	private animate() {
 		requestAnimationFrame(this.animate);
-
-		this.cube!.rotation.x += this.speed;
-		this.cube!.rotation.y += this.speed;
-
-		this.renderer.render(this.scene, this.camera);
+		this.threeUtil.RotateCube(this.speed);
+		this.threeUtil.Render();
 	}
+
+
 
 }
 </script>

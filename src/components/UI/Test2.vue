@@ -1,7 +1,7 @@
 <template>
 	<div class="component">
 		<div>
-			<label for="speed">Test1</label>
+			<label for="speed">Test2</label>
 			<input
 				v-model.number="speed"
 				name="speed"
@@ -19,7 +19,7 @@
 <style lang="scss" scoped>
 .component {
 
-	color : #cff;
+	color : #fcf;
 
 	// border : 5px solid red ;
 
@@ -27,8 +27,8 @@
 	padding : 1em ;
 
 	position : absolute ;
-	top : 1em ;
-	right : 1em ;
+	bottom : 1em ;
+	left : 1em ;
 
 	border-radius : 0.5em ;
 	background : rgba(75, 86, 246, 0.554)
@@ -39,15 +39,14 @@
 <script lang="ts">
 
 /**
- * Test1.vue
- * - PropSyncの使い方を学ぶ
- * - .syncで受けて記述減らす
+ * Test2.vue
+ * - Test2.vueの成果を受けて、続けてApp.vueのローカル変数削除方法を調査
  */
 
 import { Component, PropSync, Emit, Watch, Vue } from 'vue-property-decorator';
 
 @Component({})
-export default class Test1 extends Vue {
+export default class Test2 extends Vue {
 
 	@PropSync('syncedSpeed', {type: Number})
 	private speed!: number;

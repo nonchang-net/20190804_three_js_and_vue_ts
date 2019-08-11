@@ -1,16 +1,25 @@
 <template>
 	<div id="app">
 		<ThreeView
+			ref="threeView"
 			:speed="speed"
 		/>
 		<UI
 			ref="ui1"
 			@onSpeedChanged='onSpeedChanged($event)'
 		/>
+		<!--
 		<Test1
 			ref = "test1"
 			:syncedSpeed.sync = "appSyncedSpeed"
 		/>
+		
+		<Test2
+			ref = "test2"
+			:syncedSpeed.sync = "speed"
+		/>
+		-->
+
 	</div>
 </template>
 
@@ -39,6 +48,7 @@ import { Component, Ref, Watch, Prop, Vue } from 'vue-property-decorator';
 import ThreeView from './components/ThreeView.vue';
 import UI from './components/UI.vue';
 import Test1 from './components/UI/Test1.vue';
+import Test2 from './components/UI/Test2.vue';
 
 
 @Component({
@@ -46,6 +56,7 @@ import Test1 from './components/UI/Test1.vue';
 		ThreeView,
 		UI,
 		Test1,
+		Test2,
 	},
 })
 
@@ -55,6 +66,7 @@ export default class App extends Vue {
 
 	public appSyncedSpeed: number = 0.05;
 
+	@Ref() private threeView!: ThreeView;
 	// @Ref() private ui1!: UI;
 	// @Ref() private test1!: Test1;
 
@@ -63,14 +75,14 @@ export default class App extends Vue {
 	// }
 
 	private onSpeedChanged(newSpeed: number) {
-		console.log(`App.vue: ui1: onSpeedChanged(${newSpeed})`);
+		// console.log(`App.vue: ui1: onSpeedChanged(${newSpeed})`);
 		this.speed = newSpeed;
 	}
 
 
 	@Watch('appSyncedSpeed')
 	private onSyncedSpeedChanged() {
-		console.log(`App.vue: syncedSpeed: onSyncedSpeedChanged(${this.appSyncedSpeed})`);
+		// console.log(`App.vue: syncedSpeed: onSyncedSpeedChanged(${this.appSyncedSpeed})`);
 	}
 
 
