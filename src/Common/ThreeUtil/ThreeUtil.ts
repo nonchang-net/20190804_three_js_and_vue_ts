@@ -141,7 +141,7 @@ export default class ThreeUtil {
 	// retinaなどのレンダラー解像度設定
 	private SetDevicePixelRatio() {
 
-		this.renderer.setPixelRatio(0.25); // 1未満だとぼやける。低負荷で確認したいときなどに。
+		// this.renderer.setPixelRatio(0.25); // 1未満だとぼやける。低負荷で確認したいときなどに。
 		// this.renderer.setPixelRatio(1); //retina無効状態
 		// this.renderer.setPixelRatio(2); //倍解像度(非retinaで綺麗)
 		// this.renderer.setPixelRatio(window.devicePixelRatio); //retinaなどではくっきり高画質
@@ -153,7 +153,7 @@ export default class ThreeUtil {
 		// if (window.devicePixelRatio <= 1) {
 		// 	this.renderer.setPixelRatio(2); // 倍解像度(非retinaで綺麗)
 		// } else {
-		// 	this.renderer.setPixelRatio(window.devicePixelRatio); // retinaなどではくっきり高画質
+			this.renderer.setPixelRatio(window.devicePixelRatio); // retinaなどではくっきり高画質
 		// }
 	}
 
@@ -177,8 +177,8 @@ export default class ThreeUtil {
 		this.camera.aspect = this.viewWidth / this.viewHeight
 
 		// TODO: カメラ維持方向はコンストラクタ設定で切り替えられるようにする
-		this.UpdateCameraAspectForWidthMatch(); // width match
-		// this.UpdateCameraAspectForHeightMatch(); // height match
+		// this.UpdateCameraAspectForWidthMatch(); // width match
+		this.UpdateCameraAspectForHeightMatch(); // height match
 
 		this.camera.updateProjectionMatrix();
 	}
