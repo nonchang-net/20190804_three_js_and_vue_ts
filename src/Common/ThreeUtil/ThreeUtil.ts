@@ -13,19 +13,16 @@
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { CubemapGenerator } from 'three/examples/jsm/loaders/EquirectangularToCubeGenerator.js';
+import { Geometry, Mesh } from 'three';
 
 export default class ThreeUtil {
 
-	private readonly VIEW_SIZE: {height: number, width: number} = {
-		height: 192,
-		width: 108,
-	};
-
-	private readonly FIELD_OF_VIEW: number = 75;
+	private readonly FIELD_OF_VIEW: number = 30;
 
 	// 3DViewのアスペクト比率をコントロールするため、canvasをwrapperで囲む仕様
 	// - wrapperのCSS定義は利用側の責務とする
-	private wrapperElement!: HTMLElement;
+	private wrapperElement: HTMLElement;
 	private canvasElement: HTMLCanvasElement;
 
 	private renderer!: THREE.WebGLRenderer;
@@ -37,18 +34,16 @@ export default class ThreeUtil {
 	private get viewHeight(): number {
 		return this.wrapperElement.clientHeight;
 	}
+	public get Camera(): THREE.Camera {
+		return this.camera;
+	}
 
 	// Three.js
 	private scene = new THREE.Scene();
-	private camera = new THREE.PerspectiveCamera(
-		this.FIELD_OF_VIEW,
-		this.VIEW_SIZE.width / this.VIEW_SIZE.height,
-		0.1,
-		1000,
-	);
+	private camera = new THREE.PerspectiveCamera();
 
 	// ライト
-	// TODO: 利用側設定に汎用化
+	// TODO: 利用側設定に汎用化したいところ。IBL試す
 	private light = new THREE.DirectionalLight(0xffffff);
 
 	// キューブインスタンス
@@ -57,7 +52,7 @@ export default class ThreeUtil {
 
 	// private aspectRatio: AspectRatioUtil = new AspectRatioUtil();
 
-
+	private gltfLoader: GLTFLoader;
 
 
 	// ======================
@@ -83,11 +78,39 @@ export default class ThreeUtil {
 			this.UpdateCamera()
 		})
 
+		// glTF用? ガンマ出力を有効にしないと暗くなる
 		this.renderer.gammaOutput = true;
 
-		this.camera.position.set(0, 0, 2);
+		// gltfLoader初期化
+		this.gltfLoader = new GLTFLoader();
+
+		// ライト初期化、シーンに追加
 		this.light.position.set(0, 0, 10);
+		this.light.rotation.set(0, 45, 20); // 効いてない？
 		this.scene.add(this.light);
+
+		// IBL設定テスト中
+		// 参考: https://github.com/mrdoob/three.js/blob/master/examples/webgl_materials_cubemap_dynamic.html
+		const scene = this.scene
+		// const renderer = this.renderer
+		const textureLoader = new THREE.TextureLoader();
+		textureLoader.load(
+			'./ibl/simple_equirecutangler.png',
+			(texture: THREE.Texture) => {
+				texture.mapping = THREE.UVMapping;
+				scene.background = texture;
+				// scene.background = new CubemapGenerator(renderer)
+				// 	.fromEquirectangular(texture, {
+				// 		resolution: 1024,
+				// 		generateMipmaps: true,
+				// 		minFilter: THREE.LinearMipmapLinearFilter,
+				// 		magFilter: THREE.LinearFilter
+				// 	})
+				// ;
+			},
+		);
+
+
 	}
 
 
@@ -121,12 +144,44 @@ export default class ThreeUtil {
 	// - TODO: promiseでくくってawait呼び出しできるようにしたい
 	// - TODO: 複数モデルのローダとして汎用化したい。またlocalStorageにキャッシュしたい
 	public LoadAndAddGltfTest() {
-		const loader = new GLTFLoader();
-		loader.load(
-			'./gltfs/third-chan_ver20190729-onemesh.gltf',
+		this.gltfLoader.load(
+			'./gltfs/third-chan_ver20190811-onemesh.gltf',
 			(gltf) => {
 				const object = gltf.scene;
 				this.scene.add(object);
+			},
+			(xhr) => {
+				console.log(`progress: ${Math.floor(xhr.loaded / xhr.total * 100)}%`);
+			},
+			(error) => {
+				console.error(`error : `, error);
+			},
+		);
+	}
+
+	public LoadGreenBlock() {
+		this.gltfLoader.load(
+			'./gltfs/green-block.glb',
+			(gltf) => {
+				const object = gltf.scene;
+				object.position.set(0, -0.5, 0)
+				this.scene.add(object);
+
+				// フロック二つ目を作る
+				const originalMesh = gltf.scene.children[0] as Mesh;
+
+				const mesh = originalMesh.clone();
+				mesh.position.set(-1, -0.5, 0)
+				this.scene.add(mesh);
+
+				const mesh3 = originalMesh.clone();
+				mesh3.position.set(0, -0.5, 2)
+				this.scene.add(mesh3);
+
+
+				// const block2 = gltf.scene
+				// block2.position.set(0, -0.5, -1)
+				// this.scene.add(block2);
 			},
 			(xhr) => {
 				console.log(`progress: ${Math.floor(xhr.loaded / xhr.total * 100)}%`);
@@ -141,7 +196,12 @@ export default class ThreeUtil {
 	// retinaなどのレンダラー解像度設定
 	private SetDevicePixelRatio() {
 
-		// this.renderer.setPixelRatio(0.25); // 1未満だとぼやける。低負荷で確認したいときなどに。
+		this.renderer.setPixelRatio(0.25); // 1未満だとぼやける。低負荷で確認したいときなどに。
+
+		// 多分本番はこれだけで良さそう。retinaでくっきり
+		// this.renderer.setPixelRatio(window.devicePixelRatio);
+
+		// OLD:
 		// this.renderer.setPixelRatio(1); //retina無効状態
 		// this.renderer.setPixelRatio(2); //倍解像度(非retinaで綺麗)
 		// this.renderer.setPixelRatio(window.devicePixelRatio); //retinaなどではくっきり高画質
@@ -153,7 +213,7 @@ export default class ThreeUtil {
 		// if (window.devicePixelRatio <= 1) {
 		// 	this.renderer.setPixelRatio(2); // 倍解像度(非retinaで綺麗)
 		// } else {
-			this.renderer.setPixelRatio(window.devicePixelRatio); // retinaなどではくっきり高画質
+			// this.renderer.setPixelRatio(window.devicePixelRatio); // retinaなどではくっきり高画質
 		// }
 	}
 
@@ -162,7 +222,6 @@ export default class ThreeUtil {
 	// - TODO: 縦横比率維持設定のロジックを考える
 	// - TODO: position.setは利用側でやるべき処理だよなぁ……。
 	private InititalizeCamera() {
-		this.camera = new THREE.PerspectiveCamera();
 		this.camera.near = 1;
 		this.camera.far = 10000;
 		this.camera.position.set(0, 0, +1000)
