@@ -101,6 +101,11 @@ export default class ThreeView extends Vue {
 
 	private animate() {
 		requestAnimationFrame(this.animate);
+
+		if ( this.threeUtil.Mixer ) {
+			this.threeUtil.Mixer.update(this.threeUtil.Clock.getDelta())
+		}
+
 		// this.threeUtil.RotateCube(this.speed);
 		// this.threeUtil.Camera.rotation.y += this.speed
 		this.threeUtil.Render();

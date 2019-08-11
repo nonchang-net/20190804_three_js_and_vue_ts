@@ -1,6 +1,6 @@
 <template>
 	<div class="component">
-		<p>ver 20190806 2224 test</p>
+		<p>ver 20190811 1959 test</p>
 		<div>
 			<label for="speed">speed</label>
 			<input
@@ -28,8 +28,8 @@
 	padding : 1em ;
 
 	position : absolute ;
-	top : 1em ;
-	left : 1em ;
+	bottom : 0.5em ;
+	left : 0.5em ;
 
 	border-radius : 0.5em ;
 	background : rgba(75, 86, 246, 0.554)

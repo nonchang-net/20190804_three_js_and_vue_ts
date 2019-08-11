@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { CubemapGenerator } from 'three/examples/jsm/loaders/EquirectangularToCubeGenerator.js';
-import { Geometry, Mesh } from 'three';
+import { Geometry, Mesh, AnimationMixer } from 'three';
 
 export default class ThreeUtil {
 
@@ -42,9 +42,15 @@ export default class ThreeUtil {
 	private scene = new THREE.Scene();
 	private camera = new THREE.PerspectiveCamera();
 
-	// ライト
-	// TODO: 利用側設定に汎用化したいところ。IBL試す
-	private light = new THREE.DirectionalLight(0xffffff);
+	private mixer!: AnimationMixer;
+	private clock = new THREE.Clock();
+
+	public get Clock(): THREE.Clock {
+		return this.clock;
+	}
+	public get Mixer(): THREE.AnimationMixer {
+		return this.mixer;
+	}
 
 	// キューブインスタンス
 	// TODO: ゲーム中に使われるオブジェクトの管理は利用側にくくり出したい。辞書管理か何か考える
@@ -68,9 +74,12 @@ export default class ThreeUtil {
 			canvas: this.canvasElement,
 		});
 
+		// レンダラー：シャドウを有効にする
+		this.renderer.shadowMap.enabled = true;
+		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
 		// カメラ設定など初期化
 		this.SetDevicePixelRatio();
-		this.InititalizeCamera();
 		this.UpdateCamera();
 
 		// ウィンドウリサイズイベント登録
@@ -84,10 +93,25 @@ export default class ThreeUtil {
 		// gltfLoader初期化
 		this.gltfLoader = new GLTFLoader();
 
-		// ライト初期化、シーンに追加
-		this.light.position.set(0, 0, 10);
-		this.light.rotation.set(0, 45, 20); // 効いてない？
-		this.scene.add(this.light);
+		// 環境光追加
+		const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.8);
+		this.scene.add(ambientLight);
+
+		// 平行光源追加
+		const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
+		directionalLight.position.set(5, 10, 5);
+
+		directionalLight.castShadow = true;
+		directionalLight.shadow.mapSize.width = 2048;
+		directionalLight.shadow.mapSize.height = 2048;
+		directionalLight.shadow.camera.near = 0.1
+		directionalLight.shadow.camera.far = 2000
+
+		this.scene.add(directionalLight);
+
+		// DEBUG: ライトシャドウのカメラヘルパー追加
+		// const helper = new THREE.CameraHelper( directionalLight.shadow.camera );
+		// this.scene.add( helper );
 
 		// IBL設定テスト中
 		// 参考: https://github.com/mrdoob/three.js/blob/master/examples/webgl_materials_cubemap_dynamic.html
@@ -148,40 +172,29 @@ export default class ThreeUtil {
 			'./gltfs/third-chan_ver20190811-onemesh.gltf',
 			(gltf) => {
 				const object = gltf.scene;
+				object.castShadow = true; // TODO: 効かない。。
+
+				const mesh = gltf.scene.children[0] as Mesh;
+				mesh.castShadow = true; // TODO: 利かない。。
+
+				this.mixer = new THREE.AnimationMixer(gltf.scene)
+				// console.log(gltf.animations)
+				const clip = this.GetAnimation( gltf.animations, 'Idle' )
+
+				if (clip) {
+					const action = this.mixer.clipAction(clip);
+					// action.setLoop(THREE.LoopOnce, 99999);
+					action.play();
+				} else {
+					console.error(`clip "Idle" not found...`)
+				}
+
+				// 全部混ぜるテスト
+				// for (let i = 0; i < gltf.animations.length; i ++ ) {
+				// 	this.mixer.clipAction( gltf.animations[ i ] ).play();
+				// }
+
 				this.scene.add(object);
-			},
-			(xhr) => {
-				console.log(`progress: ${Math.floor(xhr.loaded / xhr.total * 100)}%`);
-			},
-			(error) => {
-				console.error(`error : `, error);
-			},
-		);
-	}
-
-	public LoadGreenBlock() {
-		this.gltfLoader.load(
-			'./gltfs/green-block.glb',
-			(gltf) => {
-				const object = gltf.scene;
-				object.position.set(0, -0.5, 0)
-				this.scene.add(object);
-
-				// フロック二つ目を作る
-				const originalMesh = gltf.scene.children[0] as Mesh;
-
-				const mesh = originalMesh.clone();
-				mesh.position.set(-1, -0.5, 0)
-				this.scene.add(mesh);
-
-				const mesh3 = originalMesh.clone();
-				mesh3.position.set(0, -0.5, 2)
-				this.scene.add(mesh3);
-
-
-				// const block2 = gltf.scene
-				// block2.position.set(0, -0.5, -1)
-				// this.scene.add(block2);
 			},
 			(xhr) => {
 				console.log(`progress: ${Math.floor(xhr.loaded / xhr.total * 100)}%`);
@@ -193,13 +206,54 @@ export default class ThreeUtil {
 	}
 
 	// ======================
+	// glTFのブロック読み込んで並べる
+	public LoadGreenBlock() {
+		this.gltfLoader.load(
+			'./gltfs/green-block.glb',
+			(gltf) => {
+				// 要素一つだけのgltfなのでchildren0番目をMeshとして取得
+				const originalMesh = gltf.scene.children[0] as Mesh;
+
+				// cloneでサンプル土台を配置していく
+				// const meshes: Mesh[] = [];
+
+				// z方向にn個羅列
+				for (let i: number = -10; i < 30; i++) {
+					const mesh = originalMesh.clone()
+					// meshes.push(mesh);
+					mesh.position.set(0, -0.5, -1 * i)
+					mesh.receiveShadow = true;
+					// mesh.castShadow = true;
+					this.scene.add(mesh);
+				}
+
+			},
+			(xhr) => {
+				console.log(`progress: ${Math.floor(xhr.loaded / xhr.total * 100)}%`);
+			},
+			(error) => {
+				console.error(`error : `, error);
+			},
+		);
+	}
+
+	// ======================
+	// 名前指定でanimationClip取得
+	// - TODO: enum管理に置き換えたいところ。モデルローダ含めて設計余地あり
+	private GetAnimation(animations: THREE.AnimationClip[], name: string): THREE.AnimationClip | undefined {
+		for (const clip of animations) {
+			if (clip.name === name) { return clip; }
+		}
+	}
+
+	// ======================
 	// retinaなどのレンダラー解像度設定
 	private SetDevicePixelRatio() {
 
-		this.renderer.setPixelRatio(0.25); // 1未満だとぼやける。低負荷で確認したいときなどに。
+		// this.renderer.setPixelRatio(0.25); // 1未満だとぼやける。低負荷で確認したいときなどに。
 
 		// 多分本番はこれだけで良さそう。retinaでくっきり
-		// this.renderer.setPixelRatio(window.devicePixelRatio);
+		this.renderer.setPixelRatio(window.devicePixelRatio);
 
 		// OLD:
 		// this.renderer.setPixelRatio(1); //retina無効状態
@@ -218,19 +272,12 @@ export default class ThreeUtil {
 	}
 
 	// ======================
-	// カメラ初期化
-	// - TODO: 縦横比率維持設定のロジックを考える
-	// - TODO: position.setは利用側でやるべき処理だよなぁ……。
-	private InititalizeCamera() {
-		this.camera.near = 1;
-		this.camera.far = 10000;
-		this.camera.position.set(0, 0, +1000)
-	}
-
-	// ======================
 	// カメラ更新
 	// - note: 初期化時とブラウザサイズが変わった時などにレイアウト追従
 	private UpdateCamera() {
+
+		this.camera.near = 1;
+		this.camera.far = 10000;
 
 		this.renderer.setSize(this.viewWidth, this.viewHeight);
 		this.camera.aspect = this.viewWidth / this.viewHeight
