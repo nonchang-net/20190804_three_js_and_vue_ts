@@ -1,14 +1,6 @@
 /**
- * ThreeUtil
- *
- * - Vueに依存しないThree.js処理ロジックまとめ
- * 		- 一旦はアプリ寄りの固有処理もここにまとめていく。
- * 		- 汎用性の考慮はYAGNIにならない程度に適当に。
- * 		- Three使ったアプリの新規作成時に、ボイラープレートになりがちなアスペクト処理やglTF周りの実装を丸っと持っていける状態が理想。
- *
- * - Three.js自体にない汎用的な処理をまとめるイメージ
- * 		- なのでよく調べたらすでにあった、とか新しいバージョンで公式実装された、みたいなこともあるかも。
- * 		- その場合は都度削除・置き換えていくこと
+ * Game/View.ts
+ * GameのView
  */
 
 import * as THREE from 'three';
@@ -16,7 +8,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { CubemapGenerator } from 'three/examples/jsm/loaders/EquirectangularToCubeGenerator.js';
 import { Geometry, Mesh, AnimationMixer } from 'three';
 
-export default class ThreeUtil {
+export default class View {
 
 	private readonly FIELD_OF_VIEW: number = 30;
 
@@ -56,14 +48,11 @@ export default class ThreeUtil {
 	// TODO: ゲーム中に使われるオブジェクトの管理は利用側にくくり出したい。辞書管理か何か考える
 	private cube!: THREE.Mesh;
 
-	// private aspectRatio: AspectRatioUtil = new AspectRatioUtil();
-
 	private gltfLoader: GLTFLoader;
 
 
 	// ======================
 	// コンストラクタ
-	// - TODO: もう少し汎用化。やりすぎは注意
 	public constructor(wrapperElement: HTMLElement, canvasElement: HTMLCanvasElement) {
 
 		this.wrapperElement = wrapperElement;
@@ -344,17 +333,4 @@ export default class ThreeUtil {
 		this.camera.fov = this.FIELD_OF_VIEW
 	}
 
-
 }
-
-// class ThreeContext {
-
-// }
-
-// class AspectRatioUtil {
-
-// }
-
-// class GeometoryUtil {
-
-// }

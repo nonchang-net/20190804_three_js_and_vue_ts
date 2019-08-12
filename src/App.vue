@@ -1,6 +1,6 @@
 <template>
 	<div id="app">
-		<ThreeView
+		<ThreeWrapper
 			ref="threeView"
 			:speed="speed"
 		/>
@@ -50,7 +50,7 @@ html, body{
 <script lang="ts">
 
 import { Component, Ref, Watch, Prop, Vue } from 'vue-property-decorator';
-import ThreeView from './components/ThreeView.vue';
+import ThreeWrapper from './components/ThreeWrapper.vue';
 import UI from './components/UI.vue';
 import Test1 from './components/UI/Test1.vue';
 import Test2 from './components/UI/Test2.vue';
@@ -58,7 +58,7 @@ import Test2 from './components/UI/Test2.vue';
 
 @Component({
 	components: {
-		ThreeView,
+		ThreeWrapper,
 		UI,
 		Test1,
 		Test2,
@@ -71,7 +71,7 @@ export default class App extends Vue {
 
 	public appSyncedSpeed: number = 0.05;
 
-	@Ref() private threeView!: ThreeView;
+	@Ref() private threeWrapper!: ThreeWrapper;
 	// @Ref() private ui1!: UI;
 	// @Ref() private test1!: Test1;
 

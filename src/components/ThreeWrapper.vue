@@ -28,7 +28,7 @@ canvas{
 
 <script lang="ts">
 /**
- * ThreeView.vue
+ * ThreeWrapper.vue
  * ゲームビューのvue側ラッパ
  *
  * ## 検討中のメモ
@@ -41,21 +41,21 @@ canvas{
  * - Three.jsとゲーム実装部分はPure TypeScriptクラスで実装する
  */
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import ThreeUtil from '../Common/ThreeUtil/ThreeUtil';
+import Game from '../Game';
 
 @Component
-export default class ThreeView extends Vue {
+export default class ThreeWrapper extends Vue {
 
 	@Prop() public speed: number = 0.02;
 
-	private threeUtil!: ThreeUtil;
+	// private game!: Game;
 
 	public mounted() {
 
 		const wrapperElement = document.getElementById('wrapper') as HTMLElement;
 		const canvasElement = document.getElementById('canvas') as HTMLCanvasElement;
 
-		const three = new ThreeUtil(wrapperElement, canvasElement);
+		const game = new Game(wrapperElement, canvasElement);
 
 		// TODO: ゲーム状況変動イベントを購読し、UI変更の必要があればemitする
 	}
