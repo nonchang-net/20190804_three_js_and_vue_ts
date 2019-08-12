@@ -15,15 +15,17 @@ export default class Lights extends GameObject {
 		const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.8);
 		this.context.scene!.add(ambientLight);
 
+		// ambientLight.castShadow = true; // エラー
+
 		// 平行光源追加
 		const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
-		directionalLight.position.set(5, 10, 5);
+		directionalLight.position.set(1, 2, 1);
 
 		directionalLight.castShadow = true;
 		directionalLight.shadow.mapSize.width = 2048;
 		directionalLight.shadow.mapSize.height = 2048;
-		directionalLight.shadow.camera.near = 0.1
-		directionalLight.shadow.camera.far = 2000
+		directionalLight.shadow.camera.near = 0.01
+		directionalLight.shadow.camera.far = 100
 
 		this.context.scene!.add(directionalLight);
 

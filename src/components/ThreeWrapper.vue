@@ -40,7 +40,7 @@ canvas{
  * - このクラスがVueイベントの橋渡しになると考える
  * - Three.jsとゲーム実装部分はPure TypeScriptクラスで実装する
  */
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Prop, Watch, Vue } from 'vue-property-decorator';
 import Game from '../Game';
 
 @Component
@@ -64,6 +64,16 @@ export default class ThreeWrapper extends Vue {
 		)
 		// TODO: ここでローディング表示を解除
 	}
+
+	// TODO: VM10102:37 [Vue warn]: Avoid mutating a prop directly since the
+	// value will be overwritten whenever the parent component re-renders.
+	// Instead, use a data or computed property based on the prop's value.
+	// Prop being mutated: "speed"
+	// @Watch('speed')
+	// private OnSpeedChanged() {
+	// 	// console.log(`OnSpeedChanged() ${this.speed}`);
+	// 	this.game.SetSpeed(this.speed)
+	// }
 
 }
 </script>

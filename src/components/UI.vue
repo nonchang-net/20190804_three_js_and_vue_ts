@@ -9,8 +9,8 @@
 				id="speed"
 				type="range"
 				min="0.000"
-				max="0.1"
-				step="0.005"
+				max="5.0"
+				step="0.1"
 			/>
 		</div>
 	</div>

@@ -41,7 +41,7 @@ export default class Camera extends GameObject {
 		this.canvasElement = canvasElement
 
 		this.renderer = new THREE.WebGLRenderer({
-			antialias: true,
+			antialias: false,
 			canvas: this.canvasElement,
 		});
 
@@ -94,10 +94,10 @@ export default class Camera extends GameObject {
 	// retinaなどのレンダラー解像度設定
 	private SetDevicePixelRatio() {
 
-		this.renderer.setPixelRatio(0.25); // 1未満だとぼやける。低負荷で確認したいときなどに。
+		// this.renderer.setPixelRatio(0.25); // 1未満だとぼやける。低負荷で確認したいときなどに。
 
 		// 多分本番はこれだけで良さそう。retinaでくっきり
-		// this.renderer.setPixelRatio(window.devicePixelRatio);
+		this.renderer.setPixelRatio(window.devicePixelRatio);
 
 		// OLD:
 		// this.renderer.setPixelRatio(1); //retina無効状態
@@ -121,7 +121,7 @@ export default class Camera extends GameObject {
 	private UpdateCamera() {
 
 		this.camera.near = 1;
-		this.camera.far = 10000;
+		this.camera.far = 60;
 
 		this.renderer.setSize(this.viewWidth, this.viewHeight);
 		this.camera.aspect = this.viewWidth / this.viewHeight

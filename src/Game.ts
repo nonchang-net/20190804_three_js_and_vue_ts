@@ -52,10 +52,15 @@ export default class Game {
 		this.thirdChan.AddToScene()
 
 		this.blocks = new Blocks(context)
-		this.blocks.AddToScene()
+		const blockBase = this.blocks.Create()
+		this.scene.add(blockBase)
 
 		// アニメーション開始
 		this.animate();
+	}
+
+	public SetSpeed(speed: number) {
+		this.blocks.speed = speed;
 	}
 
 	// ======================
@@ -73,7 +78,6 @@ export default class Game {
 		const delta = this.clock.getDelta()
 
 		// オブジェクト更新
-		// TODO: 管理リスト化
 		this.blocks.Animate(delta)
 		this.thirdChan.Animate(delta);
 
