@@ -4,7 +4,7 @@
  */
 
 import * as THREE from 'three';
-import { Geometry, Mesh, AnimationMixer } from 'three';
+import { Mesh, AnimationMixer } from 'three';
 import Loader from './Loader'
 
 export default class View {
@@ -33,6 +33,7 @@ export default class View {
 	private scene = new THREE.Scene();
 	private camera = new THREE.PerspectiveCamera();
 
+	// Three.js animation
 	private mixer!: AnimationMixer;
 	private clock = new THREE.Clock();
 
@@ -45,6 +46,12 @@ export default class View {
 
 	// ローダクラス
 	private loader: Loader = new Loader();
+
+	private cubes: Mesh[] = [];
+
+	private thirdChanMesh!: Mesh;
+
+	private frame: number = 0;
 
 
 	// ======================
@@ -120,8 +127,10 @@ export default class View {
 		const object = thirdChanGlTF.scene;
 		object.castShadow = true; // TODO: 効かない。。
 
-		const mesh = thirdChanGlTF.scene.children[0] as Mesh;
-		mesh.castShadow = true; // TODO: 利かない。。
+		const thirdChanMesh = thirdChanGlTF.scene.children[0] as Mesh;
+		thirdChanMesh.castShadow = true; // TODO: 利かない。。
+
+		this.thirdChanMesh = thirdChanMesh;
 
 		this.mixer = new THREE.AnimationMixer(thirdChanGlTF.scene)
 		// console.log(gltf.animations)
@@ -149,21 +158,38 @@ export default class View {
 		// 要素一つだけのgltfなのでchildren0番目をMeshとして取得
 		const originalMesh = greenBlockGlTF.scene.children[0] as Mesh;
 
-		// cloneでサンプル土台を配置していく
-		// const meshes: Mesh[] = [];
+		// DEBUG: これらを元にループさせる
+		const firstPos = -10;
+		const lastPos = 30;
 
+		// cloneでサンプル土台を配置していく
 		// z方向にn個羅列
-		for (let i: number = -10; i < 30; i++) {
+		for (let i: number = firstPos; i <= lastPos; i++) {
 			const copiedMesh = originalMesh.clone()
-			// meshes.push(mesh);
+			this.cubes.push(copiedMesh);
+
+			// 基本位置算出
 			copiedMesh.position.set(0, -0.5, -1 * i)
 			copiedMesh.receiveShadow = true;
+
+			if (i === firstPos) {
+				// DEBUG: 最初のやつは目印で回転させておく
+				copiedMesh.rotation.y = 30
+			} else if (i === lastPos) {
+				// DEBUG: 最後のやつは目印でscaleさせておく
+				copiedMesh.scale.set(0.5, 0.5, 0.5)
+			} else if (Math.floor(Math.random() * 5) === 0) {
+				// ランダムに非表示にしておく
+				copiedMesh.position.y = 10000;
+			}
+
 			// mesh.castShadow = true;
 			this.scene.add(copiedMesh);
 		}
 
 
 		// カメラ設定
+		// - とりあえず手動でBlender上のloc/rotを適用
 
 		// Blenderと合わせる手順メモ
 		// - Lens UnitがField of Viewになっていることを確認、Three側のFOVも同じにする
@@ -188,23 +214,32 @@ export default class View {
 	}
 
 	// ======================
-	// アニメーション
+	// 更新、レンダリング
 	public animate() {
 		requestAnimationFrame(() => { this.animate(); });
 
-		if ( this.Mixer ) {
-			this.Mixer.update(this.Clock.getDelta())
+		this.frame++;
+		if (this.frame % 2 === 0) {
+			return;
 		}
 
-		// this.RotateCube(this.speed);
-		// this.Camera.rotation.y += this.speed
-		this.Render();
-	}
+		const delta = this.Clock.getDelta()
 
-	// ======================
-	// レンダリング
-	// - 検討中: 利用側requestAnimationFrameで呼び出してるけど、こっちに移した方が良いかも
-	public Render() {
+		if ( this.Mixer ) {
+			this.Mixer.update(delta)
+		}
+
+		const speed = 1.2;
+
+		// キューブを何も考えずに移動してみる
+		for (const cube of this.cubes) {
+			cube.position.z -= delta * speed
+			// cube.rotation.y += 0.03;
+		}
+		// console.log(this.cubes[0].position);
+		// this.thirdChanMesh.rotation.x += 0.03;
+		// this.thirdChanMesh.rotation.y += 0.03;
+
 		this.renderer.render(this.scene, this.camera);
 	}
 
@@ -221,10 +256,10 @@ export default class View {
 	// retinaなどのレンダラー解像度設定
 	private SetDevicePixelRatio() {
 
-		// this.renderer.setPixelRatio(0.25); // 1未満だとぼやける。低負荷で確認したいときなどに。
+		this.renderer.setPixelRatio(0.25); // 1未満だとぼやける。低負荷で確認したいときなどに。
 
 		// 多分本番はこれだけで良さそう。retinaでくっきり
-		this.renderer.setPixelRatio(window.devicePixelRatio);
+		// this.renderer.setPixelRatio(window.devicePixelRatio);
 
 		// OLD:
 		// this.renderer.setPixelRatio(1); //retina無効状態

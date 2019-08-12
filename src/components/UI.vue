@@ -1,6 +1,6 @@
 <template>
 	<div class="component">
-		<p>ver 20190812 1246 test</p>
+		<p>ver 20190812 1435 test</p>
 		<div>
 			<label for="speed">speed</label>
 			<input

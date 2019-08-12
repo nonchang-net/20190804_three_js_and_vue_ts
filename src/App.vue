@@ -1,7 +1,7 @@
 <template>
 	<div id="app">
 		<ThreeWrapper
-			ref="threeView"
+			ref="threeWrapper"
 			:speed="speed"
 		/>
 		<UI
