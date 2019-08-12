@@ -24,14 +24,14 @@
 
 	// border : 5px solid red ;
 
-	margin : 1em ;
-	padding : 1em ;
+	margin : 0.5em ;
+	padding : 0.5em ;
 
 	position : absolute ;
-	bottom : 0.5em ;
-	left : 0.5em ;
+	top : 0.5em ;
+	right : 0.5em ;
 
-	border-radius : 0.5em ;
+	border-radius : 0.3em ;
 	background : rgba(75, 86, 246, 0.554)
 }
 </style>

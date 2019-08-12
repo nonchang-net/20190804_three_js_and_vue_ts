@@ -9,18 +9,19 @@ export default class Blocks extends GameObject {
 
 	public speed = 3.2;
 
+	public base: Group = new Group()
+
 	private readonly FIRST_POS = -10;
 	private readonly LAST_POS = 30;
 	private readonly CUBE_SIZE = 1.0
 
-	private base: Group = new Group()
 	private cubes: Mesh[] = [];
 
 	private overPosCache = -1
 	private respawnDelta = -1
 
 	// ======================
-	// 新規作成
+	// 生成
 	public Create(): Group {
 
 		this.overPosCache = (this.LAST_POS + 1) * this.CUBE_SIZE * -1
@@ -59,10 +60,8 @@ export default class Blocks extends GameObject {
 			} else if (i === this.LAST_POS) {
 				// DEBUG: 最後のやつは目印でscaleさせておく
 				copiedMesh.scale.set(0.5, 0.5, 0.5)
-			} else if (Math.floor(Math.random() * 5) === 0) {
-				// ランダムに非表示にしておく
-				copiedMesh.position.y = 10000;
-				// copiedMesh.position.y = -3;
+			} else {
+				this.Randomize(copiedMesh)
 			}
 
 			this.base.add(copiedMesh)
@@ -71,6 +70,8 @@ export default class Blocks extends GameObject {
 		return this.base
 	}
 
+	// ======================
+	// アニメーション
 	public Animate(delta: number) {
 
 		for (const cube of this.cubes) {
@@ -81,9 +82,24 @@ export default class Blocks extends GameObject {
 			if (cube.position.z < this.overPosCache) {
 				// console.log(`respawn ${cube.position.z} to ${cube.position.z + this.respawnDelta}`);
 				cube.position.z += this.respawnDelta
+				this.Randomize(cube)
 			}
 
 		}
 		// console.log(this.cubes[0].position);
 	}
+
+	// ======================
+	// ブロックの有効・無効をランダムで切り替える
+	// TODO: 実際にはゲームスピードを加味して跳べるジャンプ量以上に連続させない工夫が必要
+	private Randomize(mesh: Mesh) {
+		if (Math.floor(Math.random() * 5) === 0) {
+			// ランダムに非表示にしておく
+			mesh.position.y = 10000;
+			// copiedMesh.position.y = -3;
+		} else {
+			mesh.position.y = -0.5;
+		}
+	}
+
 }
