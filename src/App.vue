@@ -25,12 +25,17 @@
 
 <style lang="scss">
 
+html, body{
+	overflow: hidden;
+}
+
 *{
 	margin : 0 ;
 	padding : 0 ;
 }
 
 #app {
+
 	font-family: "Avenir", Helvetica, Arial, sans-serif;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
@@ -70,9 +75,11 @@ export default class App extends Vue {
 	// @Ref() private ui1!: UI;
 	// @Ref() private test1!: Test1;
 
-	// public mounted() {
-	// 	// console.log(`App.vue mounted.`);
-	// }
+	public mounted() {
+		// 全画面アプリなのでスクロールを停止する
+		// TODO: これだけだとバーのタッチ系などtouchmove依存のUI操作も全て禁止になるので個別措置など検討
+		document.addEventListener('touchmove', (e) => { e.preventDefault(); }, {passive: false});
+	}
 
 	private onSpeedChanged(newSpeed: number) {
 		// console.log(`App.vue: ui1: onSpeedChanged(${newSpeed})`);

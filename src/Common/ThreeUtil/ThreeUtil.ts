@@ -135,8 +135,49 @@ export default class ThreeUtil {
 		);
 
 
+		// test: cube追加
+		// this.AddTestCuveToScene();
+
+		// test: gltf追加
+		this.LoadAndAddGltfTest();
+		this.LoadGreenBlock();
+
+		// カメラ設定
+
+		// Blenderと合わせる手順メモ
+		// - Lens UnitがField of Viewになっていることを確認、Three側のFOVも同じにする
+		// - xはそのまま入れる
+		// - yは逆数にしてzに入れる
+		// - zはそのままyに入れる
+		this.Camera.position.set(-2, 2.5, 7);
+
+		// Blenderと合わせる手順メモ
+		// - xから90引く
+		// - yは逆数をzに入れる
+		// - zはyに入れる
+		this.Camera.rotation.set(
+			THREE.Math.degToRad(-20),
+			THREE.Math.degToRad(-17),
+			THREE.Math.degToRad(0),
+		);
+
+		// アニメーション開始
+		this.animate();
 	}
 
+	// ======================
+	// アニメーション
+	public animate() {
+		requestAnimationFrame(() => { this.animate(); });
+
+		if ( this.Mixer ) {
+			this.Mixer.update(this.Clock.getDelta())
+		}
+
+		// this.RotateCube(this.speed);
+		// this.Camera.rotation.y += this.speed
+		this.Render();
+	}
 
 	// ======================
 	// レンダリング
@@ -236,6 +277,7 @@ export default class ThreeUtil {
 			},
 		);
 	}
+
 
 	// ======================
 	// 名前指定でanimationClip取得
