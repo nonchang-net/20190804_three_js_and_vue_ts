@@ -12,9 +12,6 @@ export default class ThirdChan extends GameObject {
 	private mesh!: Mesh;
 	private mixer!: AnimationMixer;
 
-	constructor(context: ThreeContext) {
-		super(context)
-	}
 
 	// TODO: 責務混乱してるかも。GameObjectはscene参照しないほうがよくない？
 	public AddToScene() {
@@ -51,6 +48,12 @@ export default class ThirdChan extends GameObject {
 	}
 
 	public Animate(delta: number) {
+
+		// アニメーションミキサー更新
+		if ( this.mixer ) {
+			this.mixer.update(delta)
+		}
+
 		// キャラクタ回転テスト……効かない。おそらくメッシュはアニメーションミキサーに上書きされるのかも？
 		// this.thirdChanMesh.rotation.x += 0.03;
 		// this.thirdChanMesh.rotation.y += 0.03;
