@@ -4,9 +4,8 @@
  */
 
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { CubemapGenerator } from 'three/examples/jsm/loaders/EquirectangularToCubeGenerator.js';
 import { Geometry, Mesh, AnimationMixer } from 'three';
+import Loader from './Loader'
 
 export default class View {
 
@@ -14,8 +13,8 @@ export default class View {
 
 	// 3DViewのアスペクト比率をコントロールするため、canvasをwrapperで囲む仕様
 	// - wrapperのCSS定義は利用側の責務とする
-	private wrapperElement: HTMLElement;
-	private canvasElement: HTMLCanvasElement;
+	private wrapperElement!: HTMLElement;
+	private canvasElement!: HTMLCanvasElement;
 
 	private renderer!: THREE.WebGLRenderer;
 
@@ -44,16 +43,16 @@ export default class View {
 		return this.mixer;
 	}
 
-	// キューブインスタンス
-	// TODO: ゲーム中に使われるオブジェクトの管理は利用側にくくり出したい。辞書管理か何か考える
-	private cube!: THREE.Mesh;
-
-	private gltfLoader: GLTFLoader;
+	// ローダクラス
+	private loader: Loader = new Loader();
 
 
 	// ======================
-	// コンストラクタ
-	public constructor(wrapperElement: HTMLElement, canvasElement: HTMLCanvasElement) {
+	// 非同期初期化
+	public async InitializeAsync(
+		wrapperElement: HTMLElement,
+		canvasElement: HTMLCanvasElement,
+	) {
 
 		this.wrapperElement = wrapperElement;
 		this.canvasElement = canvasElement;
@@ -79,9 +78,6 @@ export default class View {
 		// glTF用? ガンマ出力を有効にしないと暗くなる
 		this.renderer.gammaOutput = true;
 
-		// gltfLoader初期化
-		this.gltfLoader = new GLTFLoader();
-
 		// 環境光追加
 		const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.8);
 		this.scene.add(ambientLight);
@@ -102,34 +98,70 @@ export default class View {
 		// const helper = new THREE.CameraHelper( directionalLight.shadow.camera );
 		// this.scene.add( helper );
 
+
+		await this.loader.LoadAsync();
+		this.loader.loadedTextures[this.loader.BACKGROUND_KEY].mapping = THREE.UVMapping;
+		this.scene.background = this.loader.loadedTextures[this.loader.BACKGROUND_KEY];
 		// IBL設定テスト中
 		// 参考: https://github.com/mrdoob/three.js/blob/master/examples/webgl_materials_cubemap_dynamic.html
-		const scene = this.scene
-		// const renderer = this.renderer
-		const textureLoader = new THREE.TextureLoader();
-		textureLoader.load(
-			'./ibl/simple_equirecutangler.png',
-			(texture: THREE.Texture) => {
-				texture.mapping = THREE.UVMapping;
-				scene.background = texture;
-				// scene.background = new CubemapGenerator(renderer)
-				// 	.fromEquirectangular(texture, {
-				// 		resolution: 1024,
-				// 		generateMipmaps: true,
-				// 		minFilter: THREE.LinearMipmapLinearFilter,
-				// 		magFilter: THREE.LinearFilter
-				// 	})
-				// ;
-			},
-		);
+		// scene.background = new CubemapGenerator(renderer)
+		// 	.fromEquirectangular(texture, {
+		// 		resolution: 1024,
+		// 		generateMipmaps: true,
+		// 		minFilter: THREE.LinearMipmapLinearFilter,
+		// 		magFilter: THREE.LinearFilter
+		// 	})
+		// ;
 
 
-		// test: cube追加
-		// this.AddTestCuveToScene();
+		// 三号ちゃんGLTF処理
+		const thirdChanGlTF = this.loader.loadedModels[this.loader.THIRD_CHAN_KEY]
 
-		// test: gltf追加
-		this.LoadAndAddGltfTest();
-		this.LoadGreenBlock();
+		const object = thirdChanGlTF.scene;
+		object.castShadow = true; // TODO: 効かない。。
+
+		const mesh = thirdChanGlTF.scene.children[0] as Mesh;
+		mesh.castShadow = true; // TODO: 利かない。。
+
+		this.mixer = new THREE.AnimationMixer(thirdChanGlTF.scene)
+		// console.log(gltf.animations)
+		const clip = this.GetAnimation( thirdChanGlTF.animations, 'Idle' )
+
+		if (clip) {
+			const action = this.mixer.clipAction(clip);
+			// action.setLoop(THREE.LoopOnce, 99999);
+			action.play();
+		} else {
+			console.error(`clip "Idle" not found...`)
+		}
+
+		// 全部混ぜるテスト
+		// for (let i = 0; i < gltf.animations.length; i ++ ) {
+		// 	this.mixer.clipAction( gltf.animations[ i ] ).play();
+		// }
+
+		this.scene.add(object);
+
+
+		// GreenCube処理
+		const greenBlockGlTF = this.loader.loadedModels[this.loader.GREEN_BLOCK_KEY]
+
+		// 要素一つだけのgltfなのでchildren0番目をMeshとして取得
+		const originalMesh = greenBlockGlTF.scene.children[0] as Mesh;
+
+		// cloneでサンプル土台を配置していく
+		// const meshes: Mesh[] = [];
+
+		// z方向にn個羅列
+		for (let i: number = -10; i < 30; i++) {
+			const copiedMesh = originalMesh.clone()
+			// meshes.push(mesh);
+			copiedMesh.position.set(0, -0.5, -1 * i)
+			copiedMesh.receiveShadow = true;
+			// mesh.castShadow = true;
+			this.scene.add(copiedMesh);
+		}
+
 
 		// カメラ設定
 
@@ -152,6 +184,7 @@ export default class View {
 
 		// アニメーション開始
 		this.animate();
+
 	}
 
 	// ======================
@@ -174,99 +207,6 @@ export default class View {
 	public Render() {
 		this.renderer.render(this.scene, this.camera);
 	}
-
-	// ======================
-	// キューブ追加テスト
-	// - TODO: オブジェクト管理方法の検討
-	public AddTestCuveToScene() {
-		const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-		const material = new THREE.MeshNormalMaterial();
-		this.cube = new THREE.Mesh(geometry, material);
-		this.scene.add(this.cube);
-	}
-
-	// ======================
-	// キューブ回転テスト
-	// - TODO: オブジェクト管理方法の検討
-	public RotateCube( speed: number) {
-		this.cube.rotation.x += speed;
-		this.cube.rotation.y += speed;
-	}
-
-	// ======================
-	// glTF読み込みテスト
-	// - TODO: promiseでくくってawait呼び出しできるようにしたい
-	// - TODO: 複数モデルのローダとして汎用化したい。またlocalStorageにキャッシュしたい
-	public LoadAndAddGltfTest() {
-		this.gltfLoader.load(
-			'./gltfs/third-chan_ver20190811-onemesh.gltf',
-			(gltf) => {
-				const object = gltf.scene;
-				object.castShadow = true; // TODO: 効かない。。
-
-				const mesh = gltf.scene.children[0] as Mesh;
-				mesh.castShadow = true; // TODO: 利かない。。
-
-				this.mixer = new THREE.AnimationMixer(gltf.scene)
-				// console.log(gltf.animations)
-				const clip = this.GetAnimation( gltf.animations, 'Idle' )
-
-				if (clip) {
-					const action = this.mixer.clipAction(clip);
-					// action.setLoop(THREE.LoopOnce, 99999);
-					action.play();
-				} else {
-					console.error(`clip "Idle" not found...`)
-				}
-
-				// 全部混ぜるテスト
-				// for (let i = 0; i < gltf.animations.length; i ++ ) {
-				// 	this.mixer.clipAction( gltf.animations[ i ] ).play();
-				// }
-
-				this.scene.add(object);
-			},
-			(xhr) => {
-				console.log(`progress: ${Math.floor(xhr.loaded / xhr.total * 100)}%`);
-			},
-			(error) => {
-				console.error(`error : `, error);
-			},
-		);
-	}
-
-	// ======================
-	// glTFのブロック読み込んで並べる
-	public LoadGreenBlock() {
-		this.gltfLoader.load(
-			'./gltfs/green-block.glb',
-			(gltf) => {
-				// 要素一つだけのgltfなのでchildren0番目をMeshとして取得
-				const originalMesh = gltf.scene.children[0] as Mesh;
-
-				// cloneでサンプル土台を配置していく
-				// const meshes: Mesh[] = [];
-
-				// z方向にn個羅列
-				for (let i: number = -10; i < 30; i++) {
-					const mesh = originalMesh.clone()
-					// meshes.push(mesh);
-					mesh.position.set(0, -0.5, -1 * i)
-					mesh.receiveShadow = true;
-					// mesh.castShadow = true;
-					this.scene.add(mesh);
-				}
-
-			},
-			(xhr) => {
-				console.log(`progress: ${Math.floor(xhr.loaded / xhr.total * 100)}%`);
-			},
-			(error) => {
-				console.error(`error : `, error);
-			},
-		);
-	}
-
 
 	// ======================
 	// 名前指定でanimationClip取得

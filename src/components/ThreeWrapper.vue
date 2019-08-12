@@ -48,16 +48,22 @@ export default class ThreeWrapper extends Vue {
 
 	@Prop() public speed: number = 0.02;
 
-	// private game!: Game;
+	private game!: Game;
 
 	public mounted() {
-
-		const wrapperElement = document.getElementById('wrapper') as HTMLElement;
-		const canvasElement = document.getElementById('canvas') as HTMLCanvasElement;
-
-		const game = new Game(wrapperElement, canvasElement);
-
 		// TODO: ゲーム状況変動イベントを購読し、UI変更の必要があればemitする
+		this.InitializeAsync()
 	}
+
+	private async InitializeAsync() {
+		// TODO: ローディング表示
+		this.game = new Game();
+		this.game.InitializeAsync(
+			document.getElementById('wrapper') as HTMLElement,
+			document.getElementById('canvas') as HTMLCanvasElement,
+		)
+		// TODO: ここでローディング表示を解除
+	}
+
 }
 </script>
