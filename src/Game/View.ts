@@ -5,9 +5,12 @@
 
 import * as THREE from 'three';
 import { Mesh, AnimationMixer } from 'three';
-import Loader from './Loader'
+import ThreeContext from './ThreeContext';
+import ThirdChan from './GameObjects/ThirdChan'
 
 export default class View {
+
+	private context!: ThreeContext;
 
 	private readonly FIELD_OF_VIEW: number = 30;
 
@@ -30,7 +33,6 @@ export default class View {
 	}
 
 	// Three.js
-	private scene = new THREE.Scene();
 	private camera = new THREE.PerspectiveCamera();
 
 	// Three.js animation
@@ -44,12 +46,12 @@ export default class View {
 		return this.mixer;
 	}
 
-	// ローダクラス
-	private loader: Loader = new Loader();
 
 	private cubes: Mesh[] = [];
 
 	private thirdChanMesh!: Mesh;
+
+	private thirdChan!: ThirdChan
 
 	private frame: number = 0;
 
@@ -57,12 +59,14 @@ export default class View {
 	// ======================
 	// 非同期初期化
 	public async InitializeAsync(
+		context: ThreeContext,
 		wrapperElement: HTMLElement,
 		canvasElement: HTMLCanvasElement,
 	) {
 
-		this.wrapperElement = wrapperElement;
-		this.canvasElement = canvasElement;
+		this.context = context
+		this.wrapperElement = wrapperElement
+		this.canvasElement = canvasElement
 
 		this.renderer = new THREE.WebGLRenderer({
 			antialias: true,
@@ -76,6 +80,7 @@ export default class View {
 		// カメラ設定など初期化
 		this.SetDevicePixelRatio();
 		this.UpdateCamera();
+		this.SetCameraLocRot()
 
 		// ウィンドウリサイズイベント登録
 		window.addEventListener('resize', () => {
@@ -85,9 +90,56 @@ export default class View {
 		// glTF用? ガンマ出力を有効にしないと暗くなる
 		this.renderer.gammaOutput = true;
 
+		this.AddLightsToScene()
+
+		this.SetBackground()
+
+		// this.AddCharacterToScene()
+		this.thirdChan = new ThirdChan(context)
+		this.thirdChan.AddToScene()
+
+		this.AddCubesToScene()
+
+		// アニメーション開始
+		this.animate();
+	}
+
+	// ======================
+	// 更新、レンダリング
+	public animate() {
+		requestAnimationFrame(() => { this.animate(); });
+
+		// フレームスキップ
+		// 60fpsでもないので1/2間引く
+		this.frame++;
+		if (this.frame % 2 === 0) {
+			return;
+		}
+
+		const delta = this.Clock.getDelta()
+
+		// アニメーションミキサー更新
+		if ( this.Mixer ) {
+			this.Mixer.update(delta)
+		}
+
+		// オブジェクト更新
+		// TODO: 管理リスト化
+		this.AnimateCubes(delta)
+		this.thirdChan.Animate(delta);
+
+		this.renderer.render(this.context.scene!, this.camera);
+	}
+
+
+
+	// ======================
+	// ライト追加
+	private AddLightsToScene() {
+
 		// 環境光追加
 		const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.8);
-		this.scene.add(ambientLight);
+		this.context.scene!.add(ambientLight);
 
 		// 平行光源追加
 		const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
@@ -99,16 +151,19 @@ export default class View {
 		directionalLight.shadow.camera.near = 0.1
 		directionalLight.shadow.camera.far = 2000
 
-		this.scene.add(directionalLight);
+		this.context.scene!.add(directionalLight);
 
 		// DEBUG: ライトシャドウのカメラヘルパー追加
 		// const helper = new THREE.CameraHelper( directionalLight.shadow.camera );
-		// this.scene.add( helper );
+		// this.context.scene!.add( helper );
+	}
 
-
-		await this.loader.LoadAsync();
-		this.loader.loadedTextures[this.loader.BACKGROUND_KEY].mapping = THREE.UVMapping;
-		this.scene.background = this.loader.loadedTextures[this.loader.BACKGROUND_KEY];
+	// ======================
+	// 背景設定
+	// TODO: IBL設定したい
+	private SetBackground() {
+		this.context.loader!.loadedTextures[this.context.loader!.BACKGROUND_KEY].mapping = THREE.UVMapping;
+		this.context.scene!.background = this.context.loader!.loadedTextures[this.context.loader!.BACKGROUND_KEY];
 		// IBL設定テスト中
 		// 参考: https://github.com/mrdoob/three.js/blob/master/examples/webgl_materials_cubemap_dynamic.html
 		// scene.background = new CubemapGenerator(renderer)
@@ -119,41 +174,13 @@ export default class View {
 		// 		magFilter: THREE.LinearFilter
 		// 	})
 		// ;
+	}
 
 
-		// 三号ちゃんGLTF処理
-		const thirdChanGlTF = this.loader.loadedModels[this.loader.THIRD_CHAN_KEY]
-
-		const object = thirdChanGlTF.scene;
-		object.castShadow = true; // TODO: 効かない。。
-
-		const thirdChanMesh = thirdChanGlTF.scene.children[0] as Mesh;
-		thirdChanMesh.castShadow = true; // TODO: 利かない。。
-
-		this.thirdChanMesh = thirdChanMesh;
-
-		this.mixer = new THREE.AnimationMixer(thirdChanGlTF.scene)
-		// console.log(gltf.animations)
-		const clip = this.GetAnimation( thirdChanGlTF.animations, 'Idle' )
-
-		if (clip) {
-			const action = this.mixer.clipAction(clip);
-			// action.setLoop(THREE.LoopOnce, 99999);
-			action.play();
-		} else {
-			console.error(`clip "Idle" not found...`)
-		}
-
-		// 全部混ぜるテスト
-		// for (let i = 0; i < gltf.animations.length; i ++ ) {
-		// 	this.mixer.clipAction( gltf.animations[ i ] ).play();
-		// }
-
-		this.scene.add(object);
-
+	private AddCubesToScene() {
 
 		// GreenCube処理
-		const greenBlockGlTF = this.loader.loadedModels[this.loader.GREEN_BLOCK_KEY]
+		const greenBlockGlTF = this.context.loader!.loadedModels[this.context.loader!.GREEN_BLOCK_KEY]
 
 		// 要素一つだけのgltfなのでchildren0番目をMeshとして取得
 		const originalMesh = greenBlockGlTF.scene.children[0] as Mesh;
@@ -184,10 +211,23 @@ export default class View {
 			}
 
 			// mesh.castShadow = true;
-			this.scene.add(copiedMesh);
+			this.context.scene!.add(copiedMesh);
 		}
+	}
 
+	private AnimateCubes(delta: number) {
 
+		const speed = 1.2;
+
+		// キューブを何も考えずに移動してみる
+		for (const cube of this.cubes) {
+			cube.position.z -= delta * speed
+			// cube.rotation.y += 0.03;
+		}
+		// console.log(this.cubes[0].position);
+	}
+
+	private SetCameraLocRot() {
 		// カメラ設定
 		// - とりあえず手動でBlender上のloc/rotを適用
 
@@ -207,49 +247,6 @@ export default class View {
 			THREE.Math.degToRad(-17),
 			THREE.Math.degToRad(0),
 		);
-
-		// アニメーション開始
-		this.animate();
-
-	}
-
-	// ======================
-	// 更新、レンダリング
-	public animate() {
-		requestAnimationFrame(() => { this.animate(); });
-
-		this.frame++;
-		if (this.frame % 2 === 0) {
-			return;
-		}
-
-		const delta = this.Clock.getDelta()
-
-		if ( this.Mixer ) {
-			this.Mixer.update(delta)
-		}
-
-		const speed = 1.2;
-
-		// キューブを何も考えずに移動してみる
-		for (const cube of this.cubes) {
-			cube.position.z -= delta * speed
-			// cube.rotation.y += 0.03;
-		}
-		// console.log(this.cubes[0].position);
-		// this.thirdChanMesh.rotation.x += 0.03;
-		// this.thirdChanMesh.rotation.y += 0.03;
-
-		this.renderer.render(this.scene, this.camera);
-	}
-
-	// ======================
-	// 名前指定でanimationClip取得
-	// - TODO: enum管理に置き換えたいところ。モデルローダ含めて設計余地あり
-	private GetAnimation(animations: THREE.AnimationClip[], name: string): THREE.AnimationClip | undefined {
-		for (const clip of animations) {
-			if (clip.name === name) { return clip; }
-		}
 	}
 
 	// ======================
